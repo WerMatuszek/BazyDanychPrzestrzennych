@@ -1,0 +1,117 @@
+CREATE DATABASE cw3;
+CREATE EXTENSION postgis;
+
+1. shp2pgsql.exe C:\Users\User\Downloads\Cw3_Karlsruhe_Germany_Shapefile\T2018_KAR_GERMANY\T2018_KAR_BUILDINGS.shp T2018_KAR_BUILDINGS | psql -h localhost -p 5432 -U postgres -d cw3
+   shp2pgsql.exe C:\Users\User\Downloads\Cw3_Karlsruhe_Germany_Shapefile\T2019_KAR_GERMANY\T2019_KAR_BUILDINGS.shp T2019_KAR_BUILDINGS | psql -h localhost -p 5432 -U postgres -d cw3
+
+   SELECT t2019_kar_buildings.polygon_id 
+	FROM t2019_kar_buildings
+	LEFT JOIN t2018_kar_buildings
+	ON t2018_kar_buildings.geom = t2019_kar_buildings.geom
+	WHERE t2018_kar_buildings.geom IS NULL;
+
+2. shp2pgsql.exe C:\Users\User\Downloads\Cw3_Karlsruhe_Germany_Shapefile\T2018_KAR_GERMANY\T2018_KAR_POI_TABLE.shp T2018_KAR_POI_TABLE | psql -h localhost -p 5432 -U postgres -d cw3
+   shp2pgsql.exe C:\Users\User\Downloads\Cw3_Karlsruhe_Germany_Shapefile\T2019_KAR_GERMANY\T2019_KAR_POI_TABLE.shp T2019_KAR_POI_TABLE | psql -h localhost -p 5432 -U postgres -d cw3
+
+   WITH new_buildings AS ( 
+	SELECT ST_Buffer(t2019_kar_buildings.geom::geography, 500) AS buffer
+	FROM t2019_kar_buildings
+	LEFT JOIN t2018_kar_buildings
+	ON t2018_kar_buildings.geom = t2019_kar_buildings.geom
+	WHERE t2018_kar_buildings.geom IS NULL 
+   ), inter_2019 AS (
+	SELECT ST_Intersects(buffer, t2019_kar_poi_table.geom) AS inter, t2019_kar_poi_table.poi_id, type
+	FROM new_buildings
+	CROSS JOIN t2019_kar_poi_table
+   ), inter_2018 AS (
+	SELECT ST_Intersects(buffer, t2018_kar_poi_table.geom) AS inter, t2018_kar_poi_table.poi_id
+	FROM new_buildings
+	CROSS JOIN t2018_kar_poi_table
+   ), inter_2019_t AS (
+	SELECT DISTINCT poi_id, inter, type
+	FROM inter_2019
+	WHERE inter = true
+   ), inter_2018_t AS (
+	SELECT DISTINCT poi_id, inter
+	FROM inter_2018
+	WHERE inter = true
+   )
+   SELECT type, COUNT(*)
+   FROM inter_2019_t
+   LEFT JOIN inter_2018_t
+   ON inter_2019_t.poi_id = inter_2018_t.poi_id
+   WHERE inter_2018_t.poi_id IS NULL
+   GROUP BY type;
+
+3. shp2pgsql.exe C:\Users\User\Downloads\Cw3_Karlsruhe_Germany_Shapefile\T2019_KAR_GERMANY\T2019_KAR_STREETS.shp T2019_KAR_STREETS | psql -h localhost -p 5432 -U postgres -d cw3
+
+   CREATE TABLE streets_reprojected AS
+   SELECT gid, link_id, st_name, 
+	ref_in_id, nref_in_id, func_class, speed_cat, 
+	fr_speed_l, to_speed_l, dir_travel,
+	ST_Transform(ST_SetSRID(geom, 4326), 3068) AS geom
+   FROM t2019_kar_streets;
+
+4. CREATE TABLE input_points (id int PRIMARY KEY, geometry geometry);
+   INSERT INTO input_points VALUES 
+	(1, 'POINT(8.36093 49.03174)'), 
+	(2, 'POINT(8.39876 49.00644)');
+
+5. UPDATE input_points
+   SET geometry = ST_Transform(ST_SetSRID(geometry, 4326), 3068);
+
+6. shp2pgsql.exe C:\Users\User\Downloads\Cw3_Karlsruhe_Germany_Shapefile\T2019_KAR_GERMANY\T2019_KAR_STREET_NODE.shp T2019_KAR_STREET_NODE | psql -h localhost -p 5432 -U postgres -d cw3
+
+   WITH nodes AS (
+	SELECT ST_Transform(ST_SetSRID(geom, 4326), 3068) AS geom, link_id, node_id
+	FROM t2019_kar_street_node
+   ), point_1 AS (
+	SELECT *
+	FROM input_points
+	LIMIT 1
+   ), point_2 AS (
+	SELECT *
+	FROM input_points
+	OFFSET 1
+   ), line AS (
+	SELECT ST_MakeLine(point_1.geometry, point_2.geometry) AS geom
+	FROM point_1
+	CROSS JOIN point_2
+   ) 
+   SELECT ST_AsText(nodes.geom)
+   FROM line
+   CROSS JOIN nodes
+   WHERE ST_Distance(line.geom, nodes.geom) <= 0.002;
+
+
+7. shp2pgsql.exe C:\Users\User\Downloads\Cw3_Karlsruhe_Germany_Shapefile\T2019_KAR_GERMANY\T2019_KAR_LAND_USE_A.shp T2019_KAR_LAND_USE_A | psql -h localhost -p 5432 -U postgres -d cw3
+
+   WITH parks AS (
+	SELECT *
+	FROM t2019_kar_land_use_a
+	WHERE type LIKE 'Park %' 
+   ), sports AS (
+	SELECT *
+	FROM t2019_kar_poi_table
+	WHERE type LIKE 'Sporting Goods Store' 
+   ), dist AS (
+	SELECT ST_Distance(parks.geom::geography, sports.geom::geography) AS dist_v, sports.poi_id
+	FROM parks
+	CROSS JOIN sports
+   )
+   SELECT COUNT(DISTINCT poi_id)
+   FROM dist
+   WHERE dist_v <= 300;
+
+8. shp2pgsql.exe C:\Users\User\Downloads\Cw3_Karlsruhe_Germany_Shapefile\T2019_KAR_GERMANY\T2019_KAR_RAILWAYS.shp T2019_KAR_RAILWAYS | psql -h localhost -p 5432 -U postgres -d cw3
+   shp2pgsql.exe C:\Users\User\Downloads\Cw3_Karlsruhe_Germany_Shapefile\T2019_KAR_GERMANY\T2019_KAR_WATER_LINES.shp T2019_KAR_WATER_LINES | psql -h localhost -p 5432 -U postgres -d cw3
+
+   CREATE TABLE T2019_KAR_BRIDGES AS
+   WITH points AS (
+	SELECT DISTINCT ST_AsText(ST_Intersection(t2019_kar_railways.geom, t2019_kar_water_lines.geom)) AS point
+	FROM t2019_kar_railways
+	CROSS JOIN t2019_kar_water_lines
+   )
+   SELECT *
+   FROM points
+   WHERE point NOT LIKE '%EMPTY%';
