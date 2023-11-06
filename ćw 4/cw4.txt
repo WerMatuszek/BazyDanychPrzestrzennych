@@ -1,0 +1,77 @@
+1. a) Prawym przyciskiem klikam na wartwę trees i wybieram właściwości -> styl
+   b) Wybieram wartość unikalna -> vegdesc i klikam klasyfikuj, a następnie ok
+   c) Klikam wektor -> Group Stats, wybieram warstwę trees
+   d) Do Rows wybieram vegdesc, a do Value sum i area_km2, a następnie klikam calculate
+   e) Pole powierzchni wszystkich lasów o charakterze mieszanym wynosi 189273 km2
+
+2. a) Klikam wektor -> narzędzia zarządzania danymi -> podziel wartstwę wektorową
+   b) Wybieram trees i vegdesc jako wartstwę i pole
+   c) Wybieram shp jako rodzaj pliku wyjściowego, a następnie klikam uruchom
+
+3. a) Klikam prawym na warstwę regions i wybieram tabelę atrybutów
+   b) Tam znajduję region Matanuska-Susitna i zaznaczam go
+   c) Znowu prawym klikam na warstwę regions i wybieram eksport -> zapisz wybrane obiekty jako
+   d) Zmieniam format na ESRI Shapefile i klikam OK
+   e) Wybieram wektor -> narzędzia geoprocessing -> przytnij
+   f) Jako wartwę źródłową wybieram railroads, a jako nakładkę nową wartwę z regionem Matanuska-Susitna
+   g) Następnie klikam uruchom
+   h) Klikam wektor -> Group Stats, wybieram warstwę Przycięte
+   i) Do Value wybieram sum i Length, a następnie klikam calculate
+   j) Długość linii kolejowych dla regionu Matanuska-Susitna wynosi 880923 stóp, czyli 268,5 km
+
+4. a) Klikam wektor -> Group Stats, wybieram warstwę airports
+   b) Do Row wybieram use, a do Value average i elev, a następnie klikam calculate
+   c) Lotniska o charakterze militarnym są położone średnio 593,25 m nad poziomem morza
+   b) Do Row wybieram use, a do Value count i elev, a następnie klikam calculate
+   d) Lotnisk o charakterze militarnym jest 8
+   e) Klikam prawym na warstwę airports i wybieram filtruj
+   f) Jako filtr używam "use" NOT LIKE 'Military'  OR  "elev"  <= 1400
+   g) Sprawdzając właściwości zwykłej i wyfiltrowanej warstwy widzimy różnicę 1 punktu
+
+5. a) Klikam prawym na warstwę regions i wybieram tabelę atrybutów
+   b) Tam znajduję region Bristol Bay i zaznaczam go
+   c) Znowu prawym klikam na warstwę regions i wybieram eksport -> zapisz wybrane obiekty jako
+   d) Zmieniam format na ESRI Shapefile i klikam OK
+   e) Wybieram wektor -> narzędzia geoprocessingu -> przytnij
+   f) Jako wartwę źródłową wybieram popp, a jako nakładkę nową wartwę z regionem Bristol Bay
+   g) Następnie klikam uruchom
+   h) Klikam wektor -> Group Stats, wybieram warstwę Przycięte
+   i) Do Value wybieram count i gid, a następnie klikam calculate
+   j) Liczba budynków dla regionu Bristol Bay wynosi 11
+
+6. a) Wybieram wektor -> narzędzia badawcze -> wybierz w odległości
+   c) Wybieram obiekty z przyciętej wcześniej warstwy w relacji do warstwy rivers
+   b) Zmieniam jednostkę na kilometry, wpisuję odległość 100
+   c) Naciskam prawym na wartwę przyciętych punktów, otwieram tabelę atrybutów
+   d) Obszar jest bardzo duży i obejmuje wszystkie 11 budynków
+   e) Jeśli obszar zmienić np. na 10km obejmować wtedy będzie 3 budynku
+
+7. a) Wybieram wektor -> narzędzia analizy -> przecięcia linii
+   b) Wybieram warstwy majrivers i railroads
+   c) Klikam wektor -> Group Stats, wybieram warstwę Przecięcia
+   d) Do Value wybieram count i gid, a następnie klikam calculate
+   e) Istnieje 8 miejsc przecięcia
+
+8. a) Wybieram wektor -> narzędzia geometrii -> wydobądź wierzchołki dla warstwy railroads
+   b) Klikam wektor -> Group Stats, wybieram warstwę Wierzchołki
+   c) Do Value wybieram count i gid, a następnie klikam calculate
+   d) Istnieją 662 wierzchołki
+
+9. a) Wybieram wektor -> narzędzia geoprocessingu -> otoczka, zaznaczam agregacje wyników
+   b) Tworzę otoczkę dla warstwy airports o odległości 100km, w niej ma być hotel
+   c) Tym samym narzędziem tworzę otoczkę dla warstwy railroads o odległości 50 km, poza nią ma być hotel
+   d) Wybieram wektor -> narzędzia geoprocessingu -> różnica
+   e) Odejmując od warstwy regions wartwę otoczki railroads dostaję teren dalej niż 50km od linii kolejowych
+   f) Wybieram wektor -> narzędzia geoprocessingu -> iloczym
+   g) Tworząc iloczyn warstwy otoczki airports i różnicy od railroads na czerwono zaznaczone zostają odpowiednie tereny dla hotelu
+
+10. a) Wybieram wektor -> narzędzia geometrii -> wydobądź wierzchołki dla warstwy swamp
+    b) Klikam prawym na warstwę wierzchołków i wybierając właściwości sprawdzam ilość punktów: 7469
+    c) Klikam wektor -> Group Stats, wybieram warstwę swamp
+    d) Do Value wybieram sum i areakm2, a następnie klikam calculate, pole wynosi 24719,8 km2
+    e) Wybieram wektor -> narzędzia geometrii -> uprość geometrię dla warstwy swamp i tolerancji 100
+    f) Wybieram wektor -> narzędzia geometrii -> wydobądź wierzchołki dla warstwy uproszczonej geometrii
+    g) Klikam prawym na warstwę wierzchołków i wybierając właściwości sprawdzam ilość punktów: 6660 (zmniejszyła się)
+    h) Klikam wektor -> Group Stats, wybieram warstwę uproszczonej geometrii
+    i) Do Value wybieram sum i areakm2, a następnie klikam calculate, pole wynosi 24719,8 km2 (nie zmieniło się)
+    
