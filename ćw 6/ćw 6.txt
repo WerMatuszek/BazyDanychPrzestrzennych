@@ -1,0 +1,18 @@
+--wczytywanie
+CREATE DATABASE cw6;
+CREATE EXTENSION postgis;
+CREATE EXTENSION postgis_raster;
+pg_restore.exe -h localhost -p 5432 -U postgres -d cw6 C:\Users\User\Downloads\postgis_raster.backup
+ALTER SCHEMA schema_name RENAME TO matuszek;
+
+--przykład 10
+create table matuszek.tpi30b as
+WITH intersects AS (
+   SELECT a.rast as rast
+   FROM rasters.dem AS a, vectors.porto_parishes AS b
+   WHERE ST_Intersects(a.rast, b.geom) AND b.municipality ilike 'porto'
+)
+select ST_TPI(rast,1) as rast
+from intersects;
+
+Bez ograniczenia zapytanie trwało 34 sekundy, zaś po ograniczeniu obszaru jedynie 1 sekundę.
